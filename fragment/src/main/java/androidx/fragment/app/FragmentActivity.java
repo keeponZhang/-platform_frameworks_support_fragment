@@ -801,6 +801,7 @@ public class FragmentActivity extends ComponentActivity implements
      * Checks whether the given request code is a valid code by masking it with 0xffff0000. Throws
      * an {@link IllegalArgumentException} if the code is not valid.
      */
+    //也就是检查咱们申请的requestcode是不是低于16的，低于则抛异常
     static void checkForValidRequestCode(int requestCode) {
         if ((requestCode & 0xffff0000) != 0) {
             throw new IllegalArgumentException("Can only use lower 16 bits for requestCode");
