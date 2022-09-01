@@ -16,10 +16,6 @@
 
 package androidx.fragment.app;
 
-import static androidx.core.util.Preconditions.checkNotNull;
-
-import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.os.Parcelable;
@@ -29,15 +25,12 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.collection.SimpleArrayMap;
-import androidx.lifecycle.ViewModelStoreOwner;
 import androidx.loader.app.LoaderManager;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -52,9 +45,8 @@ public class FragmentController {
     /**
      * Returns a {@link FragmentController}.
      */
-    @NonNull
-    public static FragmentController createController(@NonNull FragmentHostCallback<?> callbacks) {
-        return new FragmentController(checkNotNull(callbacks, "callbacks == null"));
+    public static FragmentController createController(FragmentHostCallback<?> callbacks) {
+        return new FragmentController(callbacks);
     }
 
     private FragmentController(FragmentHostCallback<?> callbacks) {
@@ -64,9 +56,8 @@ public class FragmentController {
     /**
      * Returns a {@link FragmentManager} for this controller.
      */
-    @NonNull
     public FragmentManager getSupportFragmentManager() {
-        return mHost.mFragmentManager;
+        return mHost.getFragmentManagerImpl();
     }
 
     /**
@@ -78,7 +69,6 @@ public class FragmentController {
      * @see LoaderManager#getInstance
      */
     @Deprecated
-    @SuppressLint("UnknownNullness")
     public LoaderManager getSupportLoaderManager() {
         throw new UnsupportedOperationException("Loaders are managed separately from "
                 + "FragmentController, use LoaderManager.getInstance() to obtain a LoaderManager.");
@@ -88,7 +78,7 @@ public class FragmentController {
      * Returns a fragment with the given identifier.
      */
     @Nullable
-    public Fragment findFragmentByWho(@NonNull String who) {
+    public Fragment findFragmentByWho(String who) {
         return mHost.mFragmentManager.findFragmentByWho(who);
     }
 
@@ -102,9 +92,7 @@ public class FragmentController {
     /**
      * Returns the list of active fragments.
      */
-    @NonNull
-    public List<Fragment> getActiveFragments(@SuppressLint("UnknownNullness")
-            List<Fragment> actives) {
+    public List<Fragment> getActiveFragments(List<Fragment> actives) {
         return mHost.mFragmentManager.getActiveFragments();
     }
 
@@ -112,7 +100,7 @@ public class FragmentController {
      * Attaches the host to the FragmentManager for this controller. The host must be
      * attached before the FragmentManager can be used to manage Fragments.
      */
-    public void attachHost(@Nullable Fragment parent) {
+    public void attachHost(Fragment parent) {
         mHost.mFragmentManager.attachController(
                 mHost, mHost /*container*/, parent);
     }
@@ -128,11 +116,8 @@ public class FragmentController {
      *
      * @return view the newly created view
      */
-    @Nullable
-    public View onCreateView(@Nullable View parent, @NonNull String name, @NonNull Context context,
-            @NonNull AttributeSet attrs) {
-        return mHost.mFragmentManager.getLayoutInflaterFactory()
-                .onCreateView(parent, name, context, attrs);
+    public View onCreateView(View parent, String name, Context context, AttributeSet attrs) {
+        return mHost.mFragmentManager.onCreateView(parent, name, context, attrs);
     }
 
     /**
@@ -144,10 +129,7 @@ public class FragmentController {
 
     /**
      * Saves the state for all Fragments.
-     *
-     * @see #restoreSaveState(Parcelable)
      */
-    @Nullable
     public Parcelable saveAllState() {
         return mHost.mFragmentManager.saveAllState();
     }
@@ -156,13 +138,12 @@ public class FragmentController {
      * Restores the saved state for all Fragments. The given Fragment list are Fragment
      * instances retained across configuration changes.
      *
-     * @deprecated Have your {@link FragmentHostCallback} implement {@link ViewModelStoreOwner}
-     * to automatically restore the Fragment's non configuration state and use
-     * {@link #restoreSaveState(Parcelable)} to restore the Fragment's save state.
+     * @see #retainNonConfig()
+     *
+     * @deprecated use {@link #restoreAllState(Parcelable, FragmentManagerNonConfig)}
      */
     @Deprecated
-    public void restoreAllState(@Nullable Parcelable state,
-            @Nullable List<Fragment> nonConfigList) {
+    public void restoreAllState(Parcelable state, List<Fragment> nonConfigList) {
         mHost.mFragmentManager.restoreAllState(state,
                 new FragmentManagerNonConfig(nonConfigList, null, null));
     }
@@ -171,56 +152,29 @@ public class FragmentController {
      * Restores the saved state for all Fragments. The given FragmentManagerNonConfig are Fragment
      * instances retained across configuration changes, including nested fragments
      *
-     * @deprecated Have your {@link FragmentHostCallback} implement {@link ViewModelStoreOwner}
-     * to automatically restore the Fragment's non configuration state and use
-     * {@link #restoreSaveState(Parcelable)} to restore the Fragment's save state.
+     * @see #retainNestedNonConfig()
      */
-    @Deprecated
-    public void restoreAllState(@Nullable Parcelable state,
-            @Nullable FragmentManagerNonConfig nonConfig) {
+    public void restoreAllState(Parcelable state, FragmentManagerNonConfig nonConfig) {
         mHost.mFragmentManager.restoreAllState(state, nonConfig);
-    }
-
-    /**
-     * Restores the saved state for all Fragments.
-     *
-     * @param state the saved state containing the Parcelable returned by {@link #saveAllState()}
-     * @see #saveAllState()
-     */
-    public void restoreSaveState(@Nullable Parcelable state) {
-        if (!(mHost instanceof ViewModelStoreOwner)) {
-            throw new IllegalStateException("Your FragmentHostCallback must implement "
-                    + "ViewModelStoreOwner to call restoreSaveState(). Call restoreAllState() "
-                    + " if you're still using retainNestedNonConfig().");
-        }
-        mHost.mFragmentManager.restoreSaveState(state);
     }
 
     /**
      * Returns a list of Fragments that have opted to retain their instance across
      * configuration changes.
      *
-     * @deprecated Have your {@link FragmentHostCallback} implement {@link ViewModelStoreOwner}
-     * to automatically retain the Fragment's non configuration state.
+     * @deprecated use {@link #retainNestedNonConfig()} to also track retained
+     *             nested child fragments
      */
     @Deprecated
-    @Nullable
     public List<Fragment> retainNonConfig() {
         FragmentManagerNonConfig nonconf = mHost.mFragmentManager.retainNonConfig();
-        return nonconf != null && nonconf.getFragments() != null
-                ? new ArrayList<>(nonconf.getFragments())
-                : null;
+        return nonconf != null ? nonconf.getFragments() : null;
     }
 
     /**
      * Returns a nested tree of Fragments that have opted to retain their instance across
      * configuration changes.
-     *
-     * @deprecated Have your {@link FragmentHostCallback} implement {@link ViewModelStoreOwner}
-     * to automatically retain the Fragment's non configuration state.
      */
-    @Deprecated
-    @Nullable
     public FragmentManagerNonConfig retainNestedNonConfig() {
         return mHost.mFragmentManager.retainNonConfig();
     }
@@ -310,18 +264,8 @@ public class FragmentController {
     }
 
     /**
-     * Moves Fragments managed by the controller's FragmentManager
+     * Moves all Fragments managed by the controller's FragmentManager
      * into the destroy state.
-     * <p>
-     * If the {@link androidx.fragment.app.FragmentHostCallback} is an instance of {@link ViewModelStoreOwner},
-     * then retained Fragments and any other non configuration state such as any
-     * {@link androidx.lifecycle.ViewModel} attached to Fragments will only be destroyed if
-     * {@link androidx.lifecycle.ViewModelStore#clear()} is called prior to this method.
-     * <p>
-     * Otherwise, the FragmentManager will look to see if the
-     * {@link FragmentHostCallback host's} Context is an {@link Activity}
-     * and if {@link Activity#isChangingConfigurations()} returns true. In only that case
-     * will non configuration state be retained.
      * <p>Call when Fragments should be destroyed.
      *
      * @see Fragment#onDestroy()
@@ -359,7 +303,7 @@ public class FragmentController {
      *
      * @see Fragment#onConfigurationChanged(Configuration)
      */
-    public void dispatchConfigurationChanged(@NonNull Configuration newConfig) {
+    public void dispatchConfigurationChanged(Configuration newConfig) {
         mHost.mFragmentManager.dispatchConfigurationChanged(newConfig);
     }
 
@@ -383,7 +327,7 @@ public class FragmentController {
      * @return {@code true} if the options menu contains items to display
      * @see Fragment#onCreateOptionsMenu(Menu, MenuInflater)
      */
-    public boolean dispatchCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
+    public boolean dispatchCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         return mHost.mFragmentManager.dispatchCreateOptionsMenu(menu, inflater);
     }
 
@@ -395,7 +339,7 @@ public class FragmentController {
      * @return {@code true} if the options menu contains items to display
      * @see Fragment#onPrepareOptionsMenu(Menu)
      */
-    public boolean dispatchPrepareOptionsMenu(@NonNull Menu menu) {
+    public boolean dispatchPrepareOptionsMenu(Menu menu) {
         return mHost.mFragmentManager.dispatchPrepareOptionsMenu(menu);
     }
 
@@ -408,7 +352,7 @@ public class FragmentController {
      * @return {@code true} if the options menu selection event was consumed
      * @see Fragment#onOptionsItemSelected(MenuItem)
      */
-    public boolean dispatchOptionsItemSelected(@NonNull MenuItem item) {
+    public boolean dispatchOptionsItemSelected(MenuItem item) {
         return mHost.mFragmentManager.dispatchOptionsItemSelected(item);
     }
 
@@ -421,7 +365,7 @@ public class FragmentController {
      * @return {@code true} if the context menu selection event was consumed
      * @see Fragment#onContextItemSelected(MenuItem)
      */
-    public boolean dispatchContextItemSelected(@NonNull MenuItem item) {
+    public boolean dispatchContextItemSelected(MenuItem item) {
         return mHost.mFragmentManager.dispatchContextItemSelected(item);
     }
 
@@ -432,7 +376,7 @@ public class FragmentController {
      *
      * @see Fragment#onOptionsMenuClosed(Menu)
      */
-    public void dispatchOptionsMenuClosed(@NonNull Menu menu) {
+    public void dispatchOptionsMenuClosed(Menu menu) {
         mHost.mFragmentManager.dispatchOptionsMenuClosed(menu);
     }
 
@@ -503,7 +447,6 @@ public class FragmentController {
      * @deprecated Loaders are managed separately from FragmentController
      */
     @Deprecated
-    @Nullable
     public SimpleArrayMap<String, LoaderManager> retainLoaderNonConfig() {
         return null;
     }
@@ -517,8 +460,7 @@ public class FragmentController {
      * @deprecated Loaders are managed separately from FragmentController
      */
     @Deprecated
-    public void restoreLoaderNonConfig(@SuppressLint("UnknownNullness")
-            SimpleArrayMap<String, LoaderManager> loaderManagers) {
+    public void restoreLoaderNonConfig(SimpleArrayMap<String, LoaderManager> loaderManagers) {
     }
 
     /**
@@ -527,7 +469,6 @@ public class FragmentController {
      * @deprecated Loaders are managed separately from FragmentController
      */
     @Deprecated
-    public void dumpLoaders(@NonNull String prefix, @Nullable FileDescriptor fd,
-            @NonNull PrintWriter writer, @Nullable String[] args) {
+    public void dumpLoaders(String prefix, FileDescriptor fd, PrintWriter writer, String[] args) {
     }
 }

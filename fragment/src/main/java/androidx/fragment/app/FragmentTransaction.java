@@ -16,7 +16,7 @@
 
 package androidx.fragment.app;
 
-import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX;
+import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
 
 import android.os.Bundle;
 import android.view.View;
@@ -30,13 +30,9 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.StringRes;
 import androidx.annotation.StyleRes;
-import androidx.core.view.ViewCompat;
-import androidx.lifecycle.Lifecycle;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
 
 /**
  * Static library support version of the framework's {@link android.app.FragmentTransaction}.
@@ -46,164 +42,17 @@ import java.util.ArrayList;
  * documentation for a class overview.
  */
 public abstract class FragmentTransaction {
-
-    static final int OP_NULL = 0;
-    static final int OP_ADD = 1;
-    static final int OP_REPLACE = 2;
-    static final int OP_REMOVE = 3;
-    static final int OP_HIDE = 4;
-    static final int OP_SHOW = 5;
-    static final int OP_DETACH = 6;
-    static final int OP_ATTACH = 7;
-    static final int OP_SET_PRIMARY_NAV = 8;
-    static final int OP_UNSET_PRIMARY_NAV = 9;
-    static final int OP_SET_MAX_LIFECYCLE = 10;
-
-    static final class Op {
-        int mCmd;
-        Fragment mFragment;
-        int mEnterAnim;
-        int mExitAnim;
-        int mPopEnterAnim;
-        int mPopExitAnim;
-        Lifecycle.State mOldMaxState;
-        Lifecycle.State mCurrentMaxState;
-
-        Op() {
-        }
-
-        Op(int cmd, Fragment fragment) {
-            this.mCmd = cmd;
-            this.mFragment = fragment;
-            this.mOldMaxState = Lifecycle.State.RESUMED;
-            this.mCurrentMaxState = Lifecycle.State.RESUMED;
-        }
-
-        Op(int cmd, @NonNull Fragment fragment, Lifecycle.State state) {
-            this.mCmd = cmd;
-            this.mFragment = fragment;
-            this.mOldMaxState = fragment.mMaxState;
-            this.mCurrentMaxState = state;
-        }
-    }
-
-    private final FragmentFactory mFragmentFactory;
-    private final ClassLoader mClassLoader;
-
-    ArrayList<Op> mOps = new ArrayList<>();
-    int mEnterAnim;
-    int mExitAnim;
-    int mPopEnterAnim;
-    int mPopExitAnim;
-    int mTransition;
-    boolean mAddToBackStack;
-    boolean mAllowAddToBackStack = true;
-    @Nullable String mName;
-
-    int mBreadCrumbTitleRes;
-    CharSequence mBreadCrumbTitleText;
-    int mBreadCrumbShortTitleRes;
-    CharSequence mBreadCrumbShortTitleText;
-
-    ArrayList<String> mSharedElementSourceNames;
-    ArrayList<String> mSharedElementTargetNames;
-    boolean mReorderingAllowed = false;
-
-    ArrayList<Runnable> mCommitRunnables;
-
-    /**
-     * @deprecated You should not instantiate a FragmentTransaction except via
-     * {@link FragmentManager#beginTransaction()}.
-     */
-    @Deprecated
-    public FragmentTransaction() {
-        mFragmentFactory = null;
-        mClassLoader = null;
-    }
-
-    FragmentTransaction(@NonNull FragmentFactory fragmentFactory,
-            @Nullable ClassLoader classLoader) {
-        mFragmentFactory = fragmentFactory;
-        mClassLoader = classLoader;
-    }
-
-    void addOp(Op op) {
-        mOps.add(op);
-        op.mEnterAnim = mEnterAnim;
-        op.mExitAnim = mExitAnim;
-        op.mPopEnterAnim = mPopEnterAnim;
-        op.mPopExitAnim = mPopExitAnim;
-    }
-
-    @NonNull
-    private Fragment createFragment(@NonNull Class<? extends Fragment> fragmentClass) {
-        if (mFragmentFactory == null) {
-            throw new IllegalStateException("Creating a Fragment requires that this "
-                    + "FragmentTransaction was built with FragmentManager.beginTransaction()");
-        }
-        if (mClassLoader == null) {
-            throw new IllegalStateException("The FragmentManager must be attached to its"
-                    + "host to create a Fragment");
-        }
-        return mFragmentFactory.instantiate(mClassLoader, fragmentClass.getName());
-    }
-
-    /**
-     * Calls {@link #add(int, Class, String)} with a 0 containerViewId.
-     */
-    @NonNull
-    public final FragmentTransaction add(@NonNull Class<? extends Fragment> fragmentClass,
-            @Nullable String tag)  {
-        return add(createFragment(fragmentClass), tag);
-    }
-
     /**
      * Calls {@link #add(int, Fragment, String)} with a 0 containerViewId.
      */
     @NonNull
-    public FragmentTransaction add(@NonNull Fragment fragment, @Nullable String tag)  {
-        doAddOp(0, fragment, tag, OP_ADD);
-        return this;
-    }
-
-    /**
-     * Calls {@link #add(int, Class, String)} with a null tag.
-     */
-    @NonNull
-    public final FragmentTransaction add(@IdRes int containerViewId,
-            @NonNull Class<? extends Fragment> fragmentClass)  {
-        return add(containerViewId, createFragment(fragmentClass));
-    }
+    public abstract FragmentTransaction add(@NonNull Fragment fragment, @Nullable String tag);
 
     /**
      * Calls {@link #add(int, Fragment, String)} with a null tag.
      */
     @NonNull
-    public FragmentTransaction add(@IdRes int containerViewId, @NonNull Fragment fragment) {
-        doAddOp(containerViewId, fragment, null, OP_ADD);
-        return this;
-    }
-
-    /**
-     * Add a fragment to the activity state.  This fragment may optionally
-     * also have its view (if {@link Fragment#onCreateView Fragment.onCreateView}
-     * returns non-null) into a container view of the activity.
-     *
-     * @param containerViewId Optional identifier of the container this fragment is
-     * to be placed in.  If 0, it will not be placed in a container.
-     * @param fragmentClass The fragment to be added, created via the
-     * {@link FragmentManager#getFragmentFactory() FragmentManager's FragmentFactory}.
-     * @param tag Optional tag name for the fragment, to later retrieve the
-     * fragment with {@link FragmentManager#findFragmentByTag(String)
-     * FragmentManager.findFragmentByTag(String)}.
-     *
-     * @return Returns the same FragmentTransaction instance.
-     */
-    @NonNull
-    public final FragmentTransaction add(@IdRes int containerViewId,
-            @NonNull Class<? extends Fragment> fragmentClass, @Nullable String tag) {
-        return add(containerViewId, createFragment(fragmentClass), tag);
-    }
+    public abstract FragmentTransaction add(@IdRes int containerViewId, @NonNull Fragment fragment);
 
     /**
      * Add a fragment to the activity state.  This fragment may optionally
@@ -221,86 +70,15 @@ public abstract class FragmentTransaction {
      * @return Returns the same FragmentTransaction instance.
      */
     @NonNull
-    public FragmentTransaction add(@IdRes int containerViewId, @NonNull Fragment fragment,
-            @Nullable String tag) {
-        doAddOp(containerViewId, fragment, tag, OP_ADD);
-        return this;
-    }
-
-    void doAddOp(int containerViewId, Fragment fragment, @Nullable String tag, int opcmd) {
-        final Class<?> fragmentClass = fragment.getClass();
-        final int modifiers = fragmentClass.getModifiers();
-        if (fragmentClass.isAnonymousClass() || !Modifier.isPublic(modifiers)
-                || (fragmentClass.isMemberClass() && !Modifier.isStatic(modifiers))) {
-            throw new IllegalStateException("Fragment " + fragmentClass.getCanonicalName()
-                    + " must be a public static class to be  properly recreated from"
-                    + " instance state.");
-        }
-
-        if (tag != null) {
-            if (fragment.mTag != null && !tag.equals(fragment.mTag)) {
-                throw new IllegalStateException("Can't change tag of fragment "
-                        + fragment + ": was " + fragment.mTag
-                        + " now " + tag);
-            }
-            fragment.mTag = tag;
-        }
-
-        if (containerViewId != 0) {
-            if (containerViewId == View.NO_ID) {
-                throw new IllegalArgumentException("Can't add fragment "
-                        + fragment + " with tag " + tag + " to container view with no id");
-            }
-            if (fragment.mFragmentId != 0 && fragment.mFragmentId != containerViewId) {
-                throw new IllegalStateException("Can't change container ID of fragment "
-                        + fragment + ": was " + fragment.mFragmentId
-                        + " now " + containerViewId);
-            }
-            fragment.mContainerId = fragment.mFragmentId = containerViewId;
-        }
-
-        addOp(new Op(opcmd, fragment));
-    }
-
-    /**
-     * Calls {@link #replace(int, Class, String)} with a null tag.
-     */
-    @NonNull
-    public final FragmentTransaction replace(@IdRes int containerViewId,
-            @NonNull Class<? extends Fragment> fragmentClass) {
-        return replace(containerViewId, fragmentClass, null);
-    }
+    public abstract FragmentTransaction add(@IdRes int containerViewId, @NonNull Fragment fragment,
+            @Nullable String tag);
 
     /**
      * Calls {@link #replace(int, Fragment, String)} with a null tag.
      */
     @NonNull
-    public FragmentTransaction replace(@IdRes int containerViewId, @NonNull Fragment fragment) {
-        return replace(containerViewId, fragment, null);
-    }
-
-    /**
-     * Replace an existing fragment that was added to a container.  This is
-     * essentially the same as calling {@link #remove(Fragment)} for all
-     * currently added fragments that were added with the same containerViewId
-     * and then {@link #add(int, Fragment, String)} with the same arguments
-     * given here.
-     *
-     * @param containerViewId Identifier of the container whose fragment(s) are
-     * to be replaced.
-     * @param fragmentClass The new fragment to place in the container, created via the
-     * {@link FragmentManager#getFragmentFactory() FragmentManager's FragmentFactory}.
-     * @param tag Optional tag name for the fragment, to later retrieve the
-     * fragment with {@link FragmentManager#findFragmentByTag(String)
-     * FragmentManager.findFragmentByTag(String)}.
-     *
-     * @return Returns the same FragmentTransaction instance.
-     */
-    @NonNull
-    public final FragmentTransaction replace(@IdRes int containerViewId,
-            @NonNull Class<? extends Fragment> fragmentClass, @Nullable String tag) {
-        return replace(containerViewId, createFragment(fragmentClass), tag);
-    }
+    public abstract FragmentTransaction replace(@IdRes int containerViewId,
+            @NonNull Fragment fragment);
 
     /**
      * Replace an existing fragment that was added to a container.  This is
@@ -319,14 +97,8 @@ public abstract class FragmentTransaction {
      * @return Returns the same FragmentTransaction instance.
      */
     @NonNull
-    public FragmentTransaction replace(@IdRes int containerViewId, @NonNull Fragment fragment,
-            @Nullable String tag)  {
-        if (containerViewId == 0) {
-            throw new IllegalArgumentException("Must use non-zero containerViewId");
-        }
-        doAddOp(containerViewId, fragment, tag, OP_REPLACE);
-        return this;
-    }
+    public abstract FragmentTransaction replace(@IdRes int containerViewId,
+            @NonNull Fragment fragment, @Nullable String tag);
 
     /**
      * Remove an existing fragment.  If it was added to a container, its view
@@ -337,11 +109,7 @@ public abstract class FragmentTransaction {
      * @return Returns the same FragmentTransaction instance.
      */
     @NonNull
-    public FragmentTransaction remove(@NonNull Fragment fragment) {
-        addOp(new Op(OP_REMOVE, fragment));
-
-        return this;
-    }
+    public abstract FragmentTransaction remove(@NonNull Fragment fragment);
 
     /**
      * Hides an existing fragment.  This is only relevant for fragments whose
@@ -353,11 +121,7 @@ public abstract class FragmentTransaction {
      * @return Returns the same FragmentTransaction instance.
      */
     @NonNull
-    public FragmentTransaction hide(@NonNull Fragment fragment) {
-        addOp(new Op(OP_HIDE, fragment));
-
-        return this;
-    }
+    public abstract FragmentTransaction hide(@NonNull Fragment fragment);
 
     /**
      * Shows a previously hidden fragment.  This is only relevant for fragments whose
@@ -369,11 +133,7 @@ public abstract class FragmentTransaction {
      * @return Returns the same FragmentTransaction instance.
      */
     @NonNull
-    public FragmentTransaction show(@NonNull Fragment fragment) {
-        addOp(new Op(OP_SHOW, fragment));
-
-        return this;
-    }
+    public abstract FragmentTransaction show(@NonNull Fragment fragment);
 
     /**
      * Detach the given fragment from the UI.  This is the same state as
@@ -387,11 +147,7 @@ public abstract class FragmentTransaction {
      * @return Returns the same FragmentTransaction instance.
      */
     @NonNull
-    public FragmentTransaction detach(@NonNull Fragment fragment) {
-        addOp(new Op(OP_DETACH, fragment));
-
-        return this;
-    }
+    public abstract FragmentTransaction detach(@NonNull Fragment fragment);
 
     /**
      * Re-attach a fragment after it had previously been detached from
@@ -404,11 +160,7 @@ public abstract class FragmentTransaction {
      * @return Returns the same FragmentTransaction instance.
      */
     @NonNull
-    public FragmentTransaction attach(@NonNull Fragment fragment) {
-        addOp(new Op(OP_ATTACH, fragment));
-
-        return this;
-    }
+    public abstract FragmentTransaction attach(@NonNull Fragment fragment);
 
     /**
      * Set a currently active fragment in this FragmentManager as the primary navigation fragment.
@@ -427,39 +179,13 @@ public abstract class FragmentTransaction {
      * @return the same FragmentTransaction instance
      */
     @NonNull
-    public FragmentTransaction setPrimaryNavigationFragment(@Nullable Fragment fragment) {
-        addOp(new Op(OP_SET_PRIMARY_NAV, fragment));
-
-        return this;
-    }
-
-    /**
-     * Set a ceiling for the state of an active fragment in this FragmentManager. If fragment is
-     * already above the received state, it will be forced down to the correct state.
-     *
-     * <p>The fragment provided must currently be added to the FragmentManager to have it's
-     * Lifecycle state capped, or previously added as part of this transaction. The
-     * {@link Lifecycle.State} passed in must at least be {@link Lifecycle.State#CREATED}, otherwise
-     * an {@link IllegalArgumentException} will be thrown.</p>
-     *
-     * @param fragment the fragment to have it's state capped.
-     * @param state the ceiling state for the fragment.
-     * @return the same FragmentTransaction instance
-     */
-    @NonNull
-    public FragmentTransaction setMaxLifecycle(@NonNull Fragment fragment,
-            @NonNull Lifecycle.State state) {
-        addOp(new Op(OP_SET_MAX_LIFECYCLE, fragment, state));
-        return this;
-    }
+    public abstract FragmentTransaction setPrimaryNavigationFragment(@Nullable Fragment fragment);
 
     /**
      * @return <code>true</code> if this transaction contains no operations,
      * <code>false</code> otherwise.
      */
-    public boolean isEmpty() {
-        return mOps.isEmpty();
-    }
+    public abstract boolean isEmpty();
 
     /**
      * Bit mask that is set for all enter transitions.
@@ -472,7 +198,7 @@ public abstract class FragmentTransaction {
     public static final int TRANSIT_EXIT_MASK = 0x2000;
 
     /** @hide */
-    @RestrictTo(LIBRARY_GROUP_PREFIX)
+    @RestrictTo(LIBRARY_GROUP)
     @IntDef({TRANSIT_NONE, TRANSIT_FRAGMENT_OPEN, TRANSIT_FRAGMENT_CLOSE, TRANSIT_FRAGMENT_FADE})
     @Retention(RetentionPolicy.SOURCE)
     private @interface Transit {}
@@ -500,10 +226,8 @@ public abstract class FragmentTransaction {
      *             view of the fragment being removed or detached.
      */
     @NonNull
-    public FragmentTransaction setCustomAnimations(@AnimatorRes @AnimRes int enter,
-            @AnimatorRes @AnimRes int exit) {
-        return setCustomAnimations(enter, exit, 0, 0);
-    }
+    public abstract FragmentTransaction setCustomAnimations(@AnimatorRes @AnimRes int enter,
+            @AnimatorRes @AnimRes int exit);
 
     /**
      * Set specific animation resources to run for the fragments that are
@@ -523,15 +247,9 @@ public abstract class FragmentTransaction {
      *                {@link FragmentManager#popBackStack()} or similar methods.
      */
     @NonNull
-    public FragmentTransaction setCustomAnimations(@AnimatorRes @AnimRes int enter,
+    public abstract FragmentTransaction setCustomAnimations(@AnimatorRes @AnimRes int enter,
             @AnimatorRes @AnimRes int exit, @AnimatorRes @AnimRes int popEnter,
-            @AnimatorRes @AnimRes int popExit) {
-        mEnterAnim = enter;
-        mExitAnim = exit;
-        mPopEnterAnim = popEnter;
-        mPopExitAnim = popExit;
-        return this;
-    }
+            @AnimatorRes @AnimRes int popExit);
 
     /**
      * Used with custom Transitions to map a View from a removed or hidden
@@ -546,29 +264,8 @@ public abstract class FragmentTransaction {
      * @see Fragment#setSharedElementEnterTransition(Object)
      */
     @NonNull
-    public FragmentTransaction addSharedElement(@NonNull View sharedElement, @NonNull String name) {
-        if (FragmentTransition.supportsTransition()) {
-            String transitionName = ViewCompat.getTransitionName(sharedElement);
-            if (transitionName == null) {
-                throw new IllegalArgumentException("Unique transitionNames are required for all"
-                        + " sharedElements");
-            }
-            if (mSharedElementSourceNames == null) {
-                mSharedElementSourceNames = new ArrayList<>();
-                mSharedElementTargetNames = new ArrayList<>();
-            } else if (mSharedElementTargetNames.contains(name)) {
-                throw new IllegalArgumentException("A shared element with the target name '"
-                        + name + "' has already been added to the transaction.");
-            } else if (mSharedElementSourceNames.contains(transitionName)) {
-                throw new IllegalArgumentException("A shared element with the source name '"
-                        + transitionName + "' has already been added to the transaction.");
-            }
-
-            mSharedElementSourceNames.add(transitionName);
-            mSharedElementTargetNames.add(name);
-        }
-        return this;
-    }
+    public abstract FragmentTransaction addSharedElement(@NonNull View sharedElement,
+            @NonNull String name);
 
     /**
      * Select a standard transition animation for this transaction.  May be
@@ -576,44 +273,24 @@ public abstract class FragmentTransaction {
      * {@link #TRANSIT_FRAGMENT_CLOSE}, or {@link #TRANSIT_FRAGMENT_FADE}.
      */
     @NonNull
-    public FragmentTransaction setTransition(@Transit int transition) {
-        mTransition = transition;
-        return this;
-    }
+    public abstract FragmentTransaction setTransition(@Transit int transit);
 
     /**
      * Set a custom style resource that will be used for resolving transit
      * animations.
-     *
-     * @deprecated The desired functionality never worked correctly. This should not be used.
      */
-    @Deprecated
     @NonNull
-    public FragmentTransaction setTransitionStyle(@StyleRes int styleRes) {
-        return this;
-    }
+    public abstract FragmentTransaction setTransitionStyle(@StyleRes int styleRes);
 
     /**
      * Add this transaction to the back stack.  This means that the transaction
      * will be remembered after it is committed, and will reverse its operation
      * when later popped off the stack.
-     * <p>
-     * {@link #setReorderingAllowed(boolean)} must be set to <code>true</code>
-     * in the same transaction as addToBackStack() to allow the pop of that
-     * transaction to be reordered.
      *
      * @param name An optional name for this back stack state, or null.
      */
     @NonNull
-    public FragmentTransaction addToBackStack(@Nullable String name) {
-        if (!mAllowAddToBackStack) {
-            throw new IllegalStateException(
-                    "This FragmentTransaction is not allowed to be added to the back stack.");
-        }
-        mAddToBackStack = true;
-        mName = name;
-        return this;
-    }
+    public abstract FragmentTransaction addToBackStack(@Nullable String name);
 
     /**
      * Returns true if this FragmentTransaction is allowed to be added to the back
@@ -622,9 +299,7 @@ public abstract class FragmentTransaction {
      *
      * @return True if {@link #addToBackStack(String)} is permitted on this transaction.
      */
-    public boolean isAddToBackStackAllowed() {
-        return mAllowAddToBackStack;
-    }
+    public abstract boolean isAddToBackStackAllowed();
 
     /**
      * Disallow calls to {@link #addToBackStack(String)}. Any future calls to
@@ -632,14 +307,7 @@ public abstract class FragmentTransaction {
      * has already been called, this method will throw IllegalStateException.
      */
     @NonNull
-    public FragmentTransaction disallowAddToBackStack() {
-        if (mAddToBackStack) {
-            throw new IllegalStateException(
-                    "This transaction is already being added to the back stack");
-        }
-        mAllowAddToBackStack = false;
-        return this;
-    }
+    public abstract FragmentTransaction disallowAddToBackStack();
 
     /**
      * Set the full title to show as a bread crumb when this transaction
@@ -648,11 +316,7 @@ public abstract class FragmentTransaction {
      * @param res A string resource containing the title.
      */
     @NonNull
-    public FragmentTransaction setBreadCrumbTitle(@StringRes int res) {
-        mBreadCrumbTitleRes = res;
-        mBreadCrumbTitleText = null;
-        return this;
-    }
+    public abstract FragmentTransaction setBreadCrumbTitle(@StringRes int res);
 
     /**
      * Like {@link #setBreadCrumbTitle(int)} but taking a raw string; this
@@ -660,11 +324,7 @@ public abstract class FragmentTransaction {
      * later if the locale changes.
      */
     @NonNull
-    public FragmentTransaction setBreadCrumbTitle(@Nullable CharSequence text) {
-        mBreadCrumbTitleRes = 0;
-        mBreadCrumbTitleText = text;
-        return this;
-    }
+    public abstract FragmentTransaction setBreadCrumbTitle(@Nullable CharSequence text);
 
     /**
      * Set the short title to show as a bread crumb when this transaction
@@ -673,11 +333,7 @@ public abstract class FragmentTransaction {
      * @param res A string resource containing the title.
      */
     @NonNull
-    public FragmentTransaction setBreadCrumbShortTitle(@StringRes int res) {
-        mBreadCrumbShortTitleRes = res;
-        mBreadCrumbShortTitleText = null;
-        return this;
-    }
+    public abstract FragmentTransaction setBreadCrumbShortTitle(@StringRes int res);
 
     /**
      * Like {@link #setBreadCrumbShortTitle(int)} but taking a raw string; this
@@ -685,11 +341,7 @@ public abstract class FragmentTransaction {
      * later if the locale changes.
      */
     @NonNull
-    public FragmentTransaction setBreadCrumbShortTitle(@Nullable CharSequence text) {
-        mBreadCrumbShortTitleRes = 0;
-        mBreadCrumbShortTitleText = text;
-        return this;
-    }
+    public abstract FragmentTransaction setBreadCrumbShortTitle(@Nullable CharSequence text);
 
     /**
      * Sets whether or not to allow optimizing operations within and across
@@ -720,19 +372,13 @@ public abstract class FragmentTransaction {
      *                          operations on this transaction.
      */
     @NonNull
-    public FragmentTransaction setReorderingAllowed(boolean reorderingAllowed) {
-        mReorderingAllowed = reorderingAllowed;
-        return this;
-    }
+    public abstract FragmentTransaction setReorderingAllowed(boolean reorderingAllowed);
 
     /**
      * @deprecated This has been renamed {@link #setReorderingAllowed(boolean)}.
      */
     @Deprecated
-    @NonNull
-    public FragmentTransaction setAllowOptimization(boolean allowOptimization) {
-        return setReorderingAllowed(allowOptimization);
-    }
+    public abstract FragmentTransaction setAllowOptimization(boolean allowOptimization);
 
     /**
      * Add a Runnable to this transaction that will be run after this transaction has
@@ -756,14 +402,7 @@ public abstract class FragmentTransaction {
      * @throws IllegalStateException if {@link #addToBackStack(String)} has been called
      */
     @NonNull
-    public FragmentTransaction runOnCommit(@NonNull Runnable runnable) {
-        disallowAddToBackStack();
-        if (mCommitRunnables == null) {
-            mCommitRunnables = new ArrayList<>();
-        }
-        mCommitRunnables.add(runnable);
-        return this;
-    }
+    public abstract FragmentTransaction runOnCommit(@NonNull Runnable runnable);
 
     /**
      * Schedules a commit of this transaction.  The commit does

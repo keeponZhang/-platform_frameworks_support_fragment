@@ -23,7 +23,6 @@ import android.view.ViewGroup;
 
 import androidx.collection.ArrayMap;
 import androidx.core.app.SharedElementCallback;
-import androidx.core.view.OneShotPreDrawListener;
 import androidx.core.view.ViewCompat;
 
 import java.util.ArrayList;
@@ -43,17 +42,16 @@ class FragmentTransition {
      * REPLACE operations have already been replaced by add/remove operations.
      */
     private static final int[] INVERSE_OPS = {
-            BackStackRecord.OP_NULL,                // inverse of OP_NULL (error)
-            BackStackRecord.OP_REMOVE,              // inverse of OP_ADD
-            BackStackRecord.OP_NULL,                // inverse of OP_REPLACE (error)
-            BackStackRecord.OP_ADD,                 // inverse of OP_REMOVE
-            BackStackRecord.OP_SHOW,                // inverse of OP_HIDE
-            BackStackRecord.OP_HIDE,                // inverse of OP_SHOW
-            BackStackRecord.OP_ATTACH,              // inverse of OP_DETACH
-            BackStackRecord.OP_DETACH,              // inverse of OP_ATTACH
-            BackStackRecord.OP_UNSET_PRIMARY_NAV,   // inverse of OP_SET_PRIMARY_NAV
-            BackStackRecord.OP_SET_PRIMARY_NAV,     // inverse of OP_UNSET_PRIMARY_NAV
-            BackStackRecord.OP_SET_MAX_LIFECYCLE
+            BackStackRecord.OP_NULL,              // inverse of OP_NULL (error)
+            BackStackRecord.OP_REMOVE,            // inverse of OP_ADD
+            BackStackRecord.OP_NULL,              // inverse of OP_REPLACE (error)
+            BackStackRecord.OP_ADD,               // inverse of OP_REMOVE
+            BackStackRecord.OP_SHOW,              // inverse of OP_HIDE
+            BackStackRecord.OP_HIDE,              // inverse of OP_SHOW
+            BackStackRecord.OP_ATTACH,            // inverse of OP_DETACH
+            BackStackRecord.OP_DETACH,            // inverse of OP_ATTACH
+            BackStackRecord.OP_UNSET_PRIMARY_NAV, // inverse of OP_SET_PRIMARY_NAV
+            BackStackRecord.OP_SET_PRIMARY_NAV,   // inverse of OP_UNSET_PRIMARY_NAV
     };
 
     private static final FragmentTransitionImpl PLATFORM_IMPL = Build.VERSION.SDK_INT >= 21
@@ -90,7 +88,7 @@ class FragmentTransition {
      * that the added Fragments have not created their Views yet and the hierarchy
      * is unknown.
      *
-     * @param fragmentManager The executing FragmentManager
+     * @param fragmentManager The executing FragmentManagerImpl
      * @param records The list of transactions being executed.
      * @param isRecordPop For each transaction, whether it is a pop transaction or not.
      * @param startIndex The first index into records and isRecordPop to execute as
@@ -101,7 +99,7 @@ class FragmentTransition {
      *                    Views of incoming fragments have been added. false if the
      *                    transaction has yet to be run and Views haven't been created.
      */
-    static void startTransitions(FragmentManager fragmentManager,
+    static void startTransitions(FragmentManagerImpl fragmentManager,
             ArrayList<BackStackRecord> records, ArrayList<Boolean> isRecordPop,
             int startIndex, int endIndex, boolean isReordered) {
         if (fragmentManager.mCurState < Fragment.CREATED) {
@@ -198,7 +196,7 @@ class FragmentTransition {
      * reordered. That means that all Fragment Views have been added and incoming fragment
      * Views are marked invisible.
      *
-     * @param fragmentManager The executing FragmentManager
+     * @param fragmentManager The executing FragmentManagerImpl
      * @param containerId The container ID that is executing the transition.
      * @param fragments A structure holding the transitioning fragments in this container.
      * @param nonExistentView A View that does not exist in the hierarchy. This is used to
@@ -208,7 +206,7 @@ class FragmentTransition {
      *                      the final fragment's Views as given in
      *                      {@link FragmentTransaction#addSharedElement(View, String)}.
      */
-    private static void configureTransitionsReordered(FragmentManager fragmentManager,
+    private static void configureTransitionsReordered(FragmentManagerImpl fragmentManager,
             int containerId, FragmentContainerTransition fragments,
             View nonExistentView, ArrayMap<String, String> nameOverrides) {
         ViewGroup sceneRoot = null;
@@ -296,7 +294,7 @@ class FragmentTransition {
      * ordered. That means that the transaction has not been executed yet, so incoming
      * Views are not yet known.
      *
-     * @param fragmentManager The executing FragmentManager
+     * @param fragmentManager The executing FragmentManagerImpl
      * @param containerId The container ID that is executing the transition.
      * @param fragments A structure holding the transitioning fragments in this container.
      * @param nonExistentView A View that does not exist in the hierarchy. This is used to
@@ -306,7 +304,7 @@ class FragmentTransition {
      *                      the final fragment's Views as given in
      *                      {@link FragmentTransaction#addSharedElement(View, String)}.
      */
-    private static void configureTransitionsOrdered(FragmentManager fragmentManager,
+    private static void configureTransitionsOrdered(FragmentManagerImpl fragmentManager,
             int containerId, FragmentContainerTransition fragments,
             View nonExistentView, ArrayMap<String, String> nameOverrides) {
         ViewGroup sceneRoot = null;
@@ -562,7 +560,7 @@ class FragmentTransition {
         final Fragment inFragment = fragments.lastIn;
         final Fragment outFragment = fragments.firstOut;
         if (inFragment != null) {
-            inFragment.requireView().setVisibility(View.VISIBLE);
+            inFragment.getView().setVisibility(View.VISIBLE);
         }
         if (inFragment == null || outFragment == null) {
             return null; // no shared element without a fragment
@@ -787,7 +785,7 @@ class FragmentTransition {
         }
         final Fragment outFragment = fragments.firstOut;
         final ArrayMap<String, View> outSharedElements = new ArrayMap<>();
-        impl.findNamedViews(outSharedElements, outFragment.requireView());
+        impl.findNamedViews(outSharedElements, outFragment.getView());
 
         final SharedElementCallback sharedElementCallback;
         final ArrayList<String> names;
@@ -800,9 +798,7 @@ class FragmentTransition {
             names = outTransaction.mSharedElementSourceNames;
         }
 
-        if (names != null) {
-            outSharedElements.retainAll(names);
-        }
+        outSharedElements.retainAll(names);
         if (sharedElementCallback != null) {
             sharedElementCallback.onMapSharedElements(names, outSharedElements);
             for (int i = names.size() - 1; i >= 0; i--) {
@@ -1124,7 +1120,7 @@ class FragmentTransition {
     private static void addToFirstInLastOut(BackStackRecord transaction, BackStackRecord.Op op,
             SparseArray<FragmentContainerTransition> transitioningFragments, boolean isPop,
             boolean isReorderedTransaction) {
-        final Fragment fragment = op.mFragment;
+        final Fragment fragment = op.fragment;
         if (fragment == null) {
             return; // no fragment, no transition
         }
@@ -1132,7 +1128,7 @@ class FragmentTransition {
         if (containerId == 0) {
             return; // no container, no transition
         }
-        final int command = isPop ? INVERSE_OPS[op.mCmd] : op.mCmd;
+        final int command = isPop ? INVERSE_OPS[op.cmd] : op.cmd;
         boolean setLastIn = false;
         boolean wasRemoved = false;
         boolean setFirstOut = false;
@@ -1192,11 +1188,11 @@ class FragmentTransition {
              * Ensure that fragments that are entering are at least at the CREATED state
              * so that they may load Transitions using TransitionInflater.
              */
-            FragmentManager manager = transaction.mManager;
+            FragmentManagerImpl manager = transaction.mManager;
             if (fragment.mState < Fragment.CREATED && manager.mCurState >= Fragment.CREATED
                     && !transaction.mReorderingAllowed) {
                 manager.makeActive(fragment);
-                manager.moveToState(fragment, Fragment.CREATED, 0, false);
+                manager.moveToState(fragment, Fragment.CREATED, 0, 0, false);
             }
         }
         if (setFirstOut && (containerTransition == null || containerTransition.firstOut == null)) {

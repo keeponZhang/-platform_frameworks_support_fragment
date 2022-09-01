@@ -16,16 +16,13 @@
 
 package androidx.fragment.app;
 
-import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX;
+import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
 
-import android.annotation.SuppressLint;
 import android.graphics.Rect;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
-import androidx.core.view.OneShotPreDrawListener;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.ViewGroupCompat;
 
@@ -37,8 +34,7 @@ import java.util.Map;
 /**
  * @hide
  */
-@RestrictTo(LIBRARY_GROUP_PREFIX)
-@SuppressLint("UnknownNullness")
+@RestrictTo(LIBRARY_GROUP)
 public abstract class FragmentTransitionImpl {
 
     /**
@@ -186,7 +182,7 @@ public abstract class FragmentTransitionImpl {
      *
      * @param transitioningViews This View will be added to transitioningViews if it is VISIBLE and
      *                           a normal View or a ViewGroup with
-     *                           {@link android.view.ViewGroup#isTransitionGroup()} true.
+     *                           {@link ViewGroup#isTransitionGroup()} true.
      * @param view               The base of the view hierarchy to look in.
      */
     void captureTransitioningViews(ArrayList<View> transitioningViews, View view) {
@@ -212,7 +208,7 @@ public abstract class FragmentTransitionImpl {
      * Finds all views that have transition names in the hierarchy under the given view and
      * stores them in {@code namedViews} map with the name as the key.
      */
-    void findNamedViews(Map<String, View> namedViews, @NonNull View view) {
+    void findNamedViews(Map<String, View> namedViews, View view) {
         if (view.getVisibility() == View.VISIBLE) {
             String transitionName = ViewCompat.getTransitionName(view);
             if (transitionName != null) {

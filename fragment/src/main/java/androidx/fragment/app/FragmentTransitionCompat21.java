@@ -228,7 +228,6 @@ class FragmentTransitionCompat21 extends FragmentTransitionImpl {
 
             @Override
             public void onTransitionEnd(Transition transition) {
-                transition.removeListener(this);
             }
 
             @Override

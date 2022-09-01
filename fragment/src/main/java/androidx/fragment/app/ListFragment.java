@@ -91,10 +91,9 @@ public class ListFragment extends Fragment {
      * way to have the built-in indeterminant progress state be shown.
      */
     @Override
-    @Nullable
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
-            @Nullable Bundle savedInstanceState) {
-        final Context context = requireContext();
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+            Bundle savedInstanceState) {
+        final Context context = getContext();
 
         FrameLayout root = new FrameLayout(context);
 
@@ -175,13 +174,13 @@ public class ListFragment extends Fragment {
      * @param position The position of the view in the list
      * @param id The row id of the item that was clicked
      */
-    public void onListItemClick(@NonNull ListView l, @NonNull View v, int position, long id) {
+    public void onListItemClick(ListView l, View v, int position, long id) {
     }
 
     /**
      * Provide the cursor for the list view.
      */
-    public void setListAdapter(@Nullable ListAdapter adapter) {
+    public void setListAdapter(ListAdapter adapter) {
         boolean hadAdapter = mAdapter != null;
         mAdapter = adapter;
         if (mList != null) {
@@ -189,7 +188,7 @@ public class ListFragment extends Fragment {
             if (!mListShown && !hadAdapter) {
                 // The list was hidden, and previously didn't have an
                 // adapter.  It is now time to show it.
-                setListShown(true, requireView().getWindowToken() != null);
+                setListShown(true, getView().getWindowToken() != null);
             }
         }
     }
@@ -224,7 +223,6 @@ public class ListFragment extends Fragment {
     /**
      * Get the fragment's list view widget.
      */
-    @NonNull
     public ListView getListView() {
         ensureList();
         return mList;
@@ -235,7 +233,7 @@ public class ListFragment extends Fragment {
      * be shown when the list is empty.  If you would like to have it
      * shown, call this method to supply the text it should use.
      */
-    public void setEmptyText(@Nullable CharSequence text) {
+    public void setEmptyText(CharSequence text) {
         ensureList();
         if (mStandardEmptyView == null) {
             throw new IllegalStateException("Can't be used with a custom content view");
@@ -321,28 +319,9 @@ public class ListFragment extends Fragment {
 
     /**
      * Get the ListAdapter associated with this fragment's ListView.
-     *
-     * @see #requireListAdapter()
      */
-    @Nullable
     public ListAdapter getListAdapter() {
         return mAdapter;
-    }
-
-    /**
-     * Get the ListAdapter associated with this fragment's ListView.
-     *
-     * @throws IllegalStateException if no ListAdapter has been set.
-     * @see #getListAdapter()
-     */
-    @NonNull
-    public final ListAdapter requireListAdapter() {
-        ListAdapter listAdapter = getListAdapter();
-        if (listAdapter == null) {
-            throw new IllegalStateException("ListFragment " + this
-                    + " does not have a ListAdapter.");
-        }
-        return listAdapter;
     }
 
     private void ensureList() {

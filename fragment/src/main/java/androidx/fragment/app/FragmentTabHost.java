@@ -16,7 +16,6 @@
 
 package androidx.fragment.app;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.os.Bundle;
@@ -41,10 +40,16 @@ import java.util.ArrayList;
  * the hierarchy you must call {@link #setup(Context, FragmentManager, int)}
  * to complete the initialization of the tab host.
  *
- * @deprecated Use <a href="https://developer.android.com/guide/navigation/navigation-swipe-view ">
- *  TabLayout and ViewPager</a> instead.
+ * <p>Here is a simple example of using a FragmentTabHost in an Activity:
+ *
+ * {@sample frameworks/support/samples/Support4Demos/src/main/java/com/example/android/supportv4/app/FragmentTabs.java
+ *      complete}
+ *
+ * <p>This can also be used inside of a fragment through fragment nesting:
+ *
+ * {@sample frameworks/support/samples/Support4Demos/src/main/java/com/example/android/supportv4/app/FragmentTabsFragmentSupport.java
+ *      complete}
  */
-@Deprecated
 public class FragmentTabHost extends TabHost
         implements TabHost.OnTabChangeListener {
     private final ArrayList<TabInfo> mTabs = new ArrayList<>();
@@ -53,7 +58,7 @@ public class FragmentTabHost extends TabHost
     private Context mContext;
     private FragmentManager mFragmentManager;
     private int mContainerId;
-    private TabHost.OnTabChangeListener mOnTabChangeListener;
+    private OnTabChangeListener mOnTabChangeListener;
     private TabInfo mLastTab;
     private boolean mAttached;
 
@@ -70,7 +75,7 @@ public class FragmentTabHost extends TabHost
         }
     }
 
-    static class DummyTabFactory implements TabHost.TabContentFactory {
+    static class DummyTabFactory implements TabContentFactory {
         private final Context mContext;
 
         public DummyTabFactory(Context context) {
@@ -104,7 +109,6 @@ public class FragmentTabHost extends TabHost
             out.writeString(curTab);
         }
 
-        @NonNull
         @Override
         public String toString() {
             return "FragmentTabHost.SavedState{"
@@ -112,8 +116,8 @@ public class FragmentTabHost extends TabHost
                     + " curTab=" + curTab + "}";
         }
 
-        public static final Parcelable.Creator<SavedState> CREATOR
-                = new Parcelable.Creator<SavedState>() {
+        public static final Creator<SavedState> CREATOR
+                = new Creator<SavedState>() {
             @Override
             public SavedState createFromParcel(Parcel in) {
                 return new SavedState(in);
@@ -126,26 +130,14 @@ public class FragmentTabHost extends TabHost
         };
     }
 
-    /**
-     * @deprecated Use
-     * <a href="https://developer.android.com/guide/navigation/navigation-swipe-view ">
-     *  TabLayout and ViewPager</a> instead.
-     */
-    @Deprecated
-    public FragmentTabHost(@NonNull Context context) {
+    public FragmentTabHost(Context context) {
         // Note that we call through to the version that takes an AttributeSet,
         // because the simple Context construct can result in a broken object!
         super(context, null);
         initFragmentTabHost(context, null);
     }
 
-    /**
-     * @deprecated Use
-     * <a href="https://developer.android.com/guide/navigation/navigation-swipe-view ">
-     *  TabLayout and ViewPager</a> instead.
-     */
-    @Deprecated
-    public FragmentTabHost(@NonNull Context context, @Nullable AttributeSet attrs) {
+    public FragmentTabHost(Context context, AttributeSet attrs) {
         super(context, attrs);
         initFragmentTabHost(context, attrs);
     }
@@ -165,7 +157,7 @@ public class FragmentTabHost extends TabHost
         if (findViewById(android.R.id.tabs) == null) {
             LinearLayout ll = new LinearLayout(context);
             ll.setOrientation(LinearLayout.VERTICAL);
-            addView(ll, new FrameLayout.LayoutParams(
+            addView(ll, new LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT));
 
@@ -188,9 +180,9 @@ public class FragmentTabHost extends TabHost
     }
 
     /**
-     * @deprecated Use
-     * <a href="https://developer.android.com/guide/navigation/navigation-swipe-view ">
-     *  TabLayout and ViewPager</a> instead.
+     * @deprecated Don't call the original TabHost setup, you must instead
+     * call {@link #setup(Context, FragmentManager)} or
+     * {@link #setup(Context, FragmentManager, int)}.
      */
     @Override @Deprecated
     public void setup() {
@@ -198,15 +190,7 @@ public class FragmentTabHost extends TabHost
                 "Must call setup() that takes a Context and FragmentManager");
     }
 
-    /**
-     * Set up the FragmentTabHost to use the given FragmentManager
-     *
-     * @deprecated Use
-     * <a href="https://developer.android.com/guide/navigation/navigation-swipe-view ">
-     *  TabLayout and ViewPager</a> instead.
-     */
-    @Deprecated
-    public void setup(@NonNull Context context, @NonNull FragmentManager manager) {
+    public void setup(Context context, FragmentManager manager) {
         ensureHierarchy(context);  // Ensure views required by super.setup()
         super.setup();
         mContext = context;
@@ -214,16 +198,7 @@ public class FragmentTabHost extends TabHost
         ensureContent();
     }
 
-    /**
-     * Set up the FragmentTabHost to use the given FragmentManager
-     *
-     * @deprecated Use
-     * <a href="https://developer.android.com/guide/navigation/navigation-swipe-view ">
-     *  TabLayout and ViewPager</a> instead.
-     */
-    @Deprecated
-    public void setup(@NonNull Context context, @NonNull FragmentManager manager,
-            int containerId) {
+    public void setup(Context context, FragmentManager manager, int containerId) {
         ensureHierarchy(context);  // Ensure views required by super.setup()
         super.setup();
         mContext = context;
@@ -249,24 +224,12 @@ public class FragmentTabHost extends TabHost
         }
     }
 
-    /**
-     * @deprecated Use
-     * <a href="https://developer.android.com/guide/navigation/navigation-swipe-view ">
-     *  TabLayout and ViewPager</a> instead.
-     */
-    @Deprecated
     @Override
-    public void setOnTabChangedListener(@Nullable OnTabChangeListener l) {
+    public void setOnTabChangedListener(OnTabChangeListener l) {
         mOnTabChangeListener = l;
     }
 
-    /**
-     * @deprecated Use
-     * <a href="https://developer.android.com/guide/navigation/navigation-swipe-view ">
-     *  TabLayout and ViewPager</a> instead.
-     */
-    @Deprecated
-    public void addTab(@NonNull TabHost.TabSpec tabSpec, @NonNull Class<?> clss,
+    public void addTab(@NonNull TabSpec tabSpec, @NonNull Class<?> clss,
             @Nullable Bundle args) {
         tabSpec.setContent(new DummyTabFactory(mContext));
 
@@ -289,12 +252,6 @@ public class FragmentTabHost extends TabHost
         addTab(tabSpec);
     }
 
-    /**
-     * @deprecated Use
-     * <a href="https://developer.android.com/guide/navigation/navigation-swipe-view ">
-     *  TabLayout and ViewPager</a> instead.
-     */
-    @Deprecated
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
@@ -334,26 +291,13 @@ public class FragmentTabHost extends TabHost
         }
     }
 
-    /**
-     * @deprecated Use
-     * <a href="https://developer.android.com/guide/navigation/navigation-swipe-view ">
-     *  TabLayout and ViewPager</a> instead.
-     */
-    @Deprecated
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
         mAttached = false;
     }
 
-    /**
-     * @deprecated Use
-     * <a href="https://developer.android.com/guide/navigation/navigation-swipe-view ">
-     *  TabLayout and ViewPager</a> instead.
-     */
-    @Deprecated
     @Override
-    @NonNull
     protected Parcelable onSaveInstanceState() {
         Parcelable superState = super.onSaveInstanceState();
         SavedState ss = new SavedState(superState);
@@ -361,14 +305,8 @@ public class FragmentTabHost extends TabHost
         return ss;
     }
 
-    /**
-     * @deprecated Use
-     * <a href="https://developer.android.com/guide/navigation/navigation-swipe-view ">
-     *  TabLayout and ViewPager</a> instead.
-     */
-    @Deprecated
     @Override
-    protected void onRestoreInstanceState(@SuppressLint("UnknownNullness") Parcelable state) {
+    protected void onRestoreInstanceState(Parcelable state) {
         if (!(state instanceof SavedState)) {
             super.onRestoreInstanceState(state);
             return;
@@ -378,14 +316,8 @@ public class FragmentTabHost extends TabHost
         setCurrentTabByTag(ss.curTab);
     }
 
-    /**
-     * @deprecated Use
-     * <a href="https://developer.android.com/guide/navigation/navigation-swipe-view ">
-     *  TabLayout and ViewPager</a> instead.
-     */
-    @Deprecated
     @Override
-    public void onTabChanged(@Nullable String tabId) {
+    public void onTabChanged(String tabId) {
         if (mAttached) {
             final FragmentTransaction ft = doTabChanged(tabId, null);
             if (ft != null) {
@@ -414,9 +346,8 @@ public class FragmentTabHost extends TabHost
 
             if (newTab != null) {
                 if (newTab.fragment == null) {
-                    newTab.fragment = mFragmentManager.getFragmentFactory().instantiate(
-                            mContext.getClassLoader(), newTab.clss.getName());
-                    newTab.fragment.setArguments(newTab.args);
+                    newTab.fragment = Fragment.instantiate(mContext,
+                            newTab.clss.getName(), newTab.args);
                     ft.add(mContainerId, newTab.fragment, newTab.tag);
                 } else {
                     ft.attach(newTab.fragment);
